@@ -28,7 +28,7 @@ import java.util.List;
  */
 public interface MongoClientFactory {
 
-  MongoClient getMongoClient( List<ServerAddress> serverAddressList, List<MongoCredential> credList,
+  MongoClient getMongoClient( List<ServerAddress> serverAddressList, MongoCredential credentials,
                               MongoClientOptions opts, boolean useReplicaSet );
   MongoClient getConnectionStringMongoClient( String connectionString );
 }

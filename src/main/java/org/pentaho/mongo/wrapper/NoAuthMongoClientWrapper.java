@@ -1,5 +1,5 @@
 /*!
-* Copyright 2010 - 2017 Hitachi Vantara.  All rights reserved.
+* Copyright 2010 - 2021 Hitachi Vantara.  All rights reserved.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -24,7 +24,6 @@ import com.mongodb.DBObject;
 import com.mongodb.MongoClient;
 import com.mongodb.MongoClientOptions;
 import com.mongodb.MongoCredential;
-import com.mongodb.ReplicaSetStatus;
 import com.mongodb.ServerAddress;
 import org.pentaho.mongo.BaseMessages;
 import org.pentaho.mongo.MongoDbException;
@@ -140,7 +139,7 @@ class NoAuthMongoClientWrapper implements MongoClientWrapper {
 
 
   protected MongoClient getClient( MongoClientOptions opts ) throws MongoDbException {
-    List<MongoCredential> credList = getCredentialList();
+    MongoCredential credentials = getCredentials();
     List<ServerAddress> serverAddressList = getServerAddressList();
 
     if ( serverAddressList.size() == 0 ) {
@@ -152,7 +151,7 @@ class NoAuthMongoClientWrapper implements MongoClientWrapper {
           "MongoNoAuthWrapper.Message.Error.NoHostSet" ) );
     }
     return getClientFactory( props )
-      .getMongoClient( serverAddressList, credList, opts,
+      .getMongoClient( serverAddressList, credentials, opts,
         props.useAllReplicaSetMembers() );
   }
 
@@ -164,7 +163,11 @@ class NoAuthMongoClientWrapper implements MongoClientWrapper {
    */
   public List<String> getDatabaseNames() throws MongoDbException {
     try {
-      return getMongo().getDatabaseNames();
+      List<String> dbNames = new ArrayList<>();
+      for ( String dbName : getMongo().listDatabaseNames() ) {
+        dbNames.add( dbName );
+      }
+      return dbNames;
     } catch ( Exception e ) {
       throw new MongoDbException( e );
     }
@@ -478,9 +481,9 @@ class NoAuthMongoClientWrapper implements MongoClientWrapper {
 
 
   @Override
-  public List<MongoCredential> getCredentialList() {
+  public MongoCredential getCredentials() {
     // empty cred list
-    return new ArrayList<MongoCredential>();
+    return null;
   }
 
   protected MongoCollectionWrapper wrap( DBCollection collection ) {
@@ -492,9 +495,11 @@ class NoAuthMongoClientWrapper implements MongoClientWrapper {
     getMongo().close();
   }
 
-  @Override public ReplicaSetStatus getReplicaSetStatus() {
-    return getMongo().getReplicaSetStatus();
-  }
+  // This is replaced by ClusterListener while building mongo client options.
+  // We are not using this method anywhere in our code. So, removing this method
+//  @Override public ReplicaSetStatus getReplicaSetStatus() {
+//    return getMongo().getReplicaSetStatus();
+//  }
 
   @Override
   public <ReturnType> ReturnType perform( String db, MongoDBAction<ReturnType> action ) throws MongoDbException {

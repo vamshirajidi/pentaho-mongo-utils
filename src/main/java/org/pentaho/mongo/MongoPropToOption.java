@@ -1,5 +1,5 @@
 /*!
-* Copyright 2010 - 2017 Hitachi Vantara.  All rights reserved.
+* Copyright 2010 - 2021 Hitachi Vantara.  All rights reserved.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -18,14 +18,15 @@
 package org.pentaho.mongo;
 
 import com.mongodb.BasicDBList;
+import com.mongodb.BasicDBObject;
 import com.mongodb.DBObject;
 import com.mongodb.ReadPreference;
 import com.mongodb.WriteConcern;
-import com.mongodb.util.JSON;
-import com.mongodb.util.JSONParseException;
+import org.bson.json.JsonParseException;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.concurrent.TimeUnit;
 
 
 class MongoPropToOption {
@@ -76,7 +77,13 @@ class MongoPropToOption {
       // nothing to do
       return null;
     }
-    DBObject[] tagSets = getTagSets( props );
+    DBObject[] tagSets;
+    try {
+      tagSets = getTagSets( props );
+    } catch ( JsonParseException e) {
+      throw new MongoDbException(e.getMessage());
+    }
+
     NamedReadPreference preference = NamedReadPreference.byName( readPreference );
     if ( preference == null ) {
       throw new MongoDbException(
@@ -109,7 +116,7 @@ class MongoPropToOption {
     return Arrays.toString( new ArrayList<String>( NamedReadPreference.getPreferenceNames() ).toArray() );
   }
 
-  DBObject[] getTagSets( MongoProperties props ) throws MongoDbException {
+  DBObject[] getTagSets( MongoProperties props ) throws JsonParseException {
     String tagSet = props.get( MongoProp.tagSet );
     if ( tagSet != null ) {
       BasicDBList list;
@@ -117,17 +124,28 @@ class MongoPropToOption {
         // wrap the set in an array
         tagSet = "[" + tagSet + "]";
       }
-      try {
-        list = (BasicDBList) JSON.parse( tagSet );
-      } catch ( JSONParseException parseException ) {
-        throw new MongoDbException(
-          BaseMessages.getString( PKG, "MongoPropToOption.ErrorMessage.UnableToParseTagSets", tagSet ),
-          parseException );
-      }
-      return list.toArray( new DBObject[list.size()] );
+
+      BasicDBObject tagSetObject = BasicDBObject.parse( String.format( "{\"tagset\" : %s }", tagSet ) );
+      list = (BasicDBList) tagSetObject.get( "tagset" );
+
+      return list.toArray(new DBObject[list.size()]);
     }
+
     return new DBObject[0];
   }
+
+  // Changing WriteConcern Constructor according to the documentation mentioned at following link
+  // http://mongodb.github.io/mongo-java-driver/3.2.0/javadoc/com/mongodb/WriteConcern.html
+  //
+  //  journaled: If true block until write operations have been committed to the journal. Cannot be used in combination
+  //  with fsync. Prior to MongoDB 2.6 this option was ignored if the server was running without journaling.Starting
+  //  with MongoDB 2.6 write operations will fail with an exception if this option is used when the server is running
+  //  without journaling.
+  //
+  //  fsync: If true and the server is running without journaling, blocks until the server has synced all data files
+  //  to disk. If the server is running with journaling, this acts the same as the j option, blocking until write
+  //  operations have been committed to the journal. Cannot be used in combination with j. In almost all cases the j
+  //  flag should be used in preference to this one.
 
   public WriteConcern writeConcernValue( final MongoProperties props )
     throws MongoDbException {
@@ -160,20 +178,24 @@ class MongoPropToOption {
         // try parsing as a number first
         try {
           int wc = Integer.parseInt( writeConcern );
-          concern = new WriteConcern( wc, wt, false, journaled );
+          concern = new WriteConcern( wc, wt );
+          concern.withJournal( journaled );
         } catch ( NumberFormatException n ) {
           // assume its a valid string - e.g. "majority" or a custom
           // getLastError label associated with a tag set
-          concern = new WriteConcern( writeConcern, wt, false, journaled );
+          concern = new WriteConcern( writeConcern );
+          concern.withWTimeout( wt, TimeUnit.MILLISECONDS );
+          concern.withJournal( journaled );
         }
       } else {
-        concern = new WriteConcern( 1, wt, false, journaled );
+        concern = new WriteConcern( 1, wt );
+        concern.withJournal( journaled );
       }
 
       if ( log != null ) {
         String lwc =
-          "w = " + String.valueOf( concern.getWObject() ) + ", wTimeout = " + concern.getWtimeout() + ", journaled = "
-            + concern.getJ();
+          "w = " + concern.getWObject() + ", wTimeout = " + concern.getWTimeout( TimeUnit.MILLISECONDS ) + ", journaled = "
+            + concern.getJournal();
         log.info( BaseMessages.getString( PKG, "MongoPropToOption.Message.ConfiguringWithWriteConcern", lwc ) );
       }
     }

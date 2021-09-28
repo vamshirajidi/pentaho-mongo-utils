@@ -1,5 +1,5 @@
 /*!
-* Copyright 2010 - 2017 Hitachi Vantara.  All rights reserved.
+* Copyright 2010 - 2021 Hitachi Vantara.  All rights reserved.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 
 package org.pentaho.mongo;
 
+import com.mongodb.BasicDBList;
 import com.mongodb.BasicDBObject;
 import com.mongodb.DBObject;
 import com.mongodb.ReadPreference;
@@ -24,8 +25,7 @@ import com.mongodb.Tag;
 import com.mongodb.TagSet;
 import com.mongodb.TaggableReadPreference;
 import com.mongodb.WriteConcern;
-import com.mongodb.util.JSON;
-import com.mongodb.util.JSONParseException;
+import org.bson.json.JsonParseException;
 import org.hamcrest.CoreMatchers;
 import org.hamcrest.core.IsEqual;
 import org.junit.Before;
@@ -35,6 +35,7 @@ import org.mockito.MockitoAnnotations;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.mock;
@@ -104,7 +105,10 @@ public class MongoPropToOptionTest {
       assertFalse( readPreference instanceof TaggableReadPreference );
     } else {
       assertTrue( readPreference instanceof TaggableReadPreference );
-      assertEquals( JSON.parse( "[" + tagSet + "]" ),
+
+      BasicDBObject tagSetObject = BasicDBObject.parse( String.format( "{\"tagset\" : [%s] }", tagSet ) );
+      BasicDBList list = (BasicDBList) tagSetObject.get( "tagset" );
+      assertEquals( list,
         ( getTagSets( ( (TaggableReadPreference) readPreference ).getTagSetList() ) ) );
     }
   }
@@ -128,24 +132,22 @@ public class MongoPropToOptionTest {
     MongoUtilLogger logger = mock( MongoUtilLogger.class );
 
     MongoPropToOption wrapper = new MongoPropToOption( logger );
-    assertEquals( JSON.parse( TAG_SET ), wrapper.getTagSets( builder.build() )[ 0 ] );
+    assertEquals( BasicDBObject.parse( TAG_SET ), wrapper.getTagSets( builder.build() )[ 0 ] );
     assertEquals( 1, wrapper.getTagSets( builder.build() ).length );
 
     String tagSet2 = "{ \"disk\": \"ssd\", \"use\": \"reporting\" }";
     builder.set( MongoProp.tagSet, tagSet2 );
-    assertEquals( JSON.parse( tagSet2 ), wrapper.getTagSets( builder.build() )[ 0 ] );
+    assertEquals( BasicDBObject.parse( tagSet2 ), wrapper.getTagSets( builder.build() )[ 0 ] );
     assertEquals( 1, wrapper.getTagSets( builder.build() ).length );
 
-
-
     builder.set( MongoProp.tagSet, TAG_SET_LIST );
-    assertEquals( JSON.parse( "{ \"disk\": \"ssd\", \"use\": \"reporting\", \"rack\": \"a\" }" ),
+    assertEquals( BasicDBObject.parse( "{ \"disk\": \"ssd\", \"use\": \"reporting\", \"rack\": \"a\" }" ),
         wrapper.getTagSets( builder.build() )[ 0 ] );
     assertEquals( 3, wrapper.getTagSets( builder.build() ).length );
 
     String tagsAsArray = "[" + TAG_SET_LIST + "]";
     builder.set( MongoProp.tagSet, tagsAsArray );
-    assertEquals( JSON.parse( "{ \"disk\": \"ssd\", \"use\": \"reporting\", \"rack\": \"a\" }" ),
+    assertEquals( BasicDBObject.parse( "{ \"disk\": \"ssd\", \"use\": \"reporting\", \"rack\": \"a\" }" ),
         wrapper.getTagSets( builder.build() )[ 0 ] );
     assertEquals( 3, wrapper.getTagSets( builder.build() ).length );
 
@@ -155,11 +157,9 @@ public class MongoPropToOptionTest {
     try {
       wrapper.getTagSets( builder.build() );
       fail( "Expected a parse exception" );
-    } catch ( MongoDbException e ) {
-      assertEquals( "The tagSet property specified cannot be parsed:  "
-              + "[ { key : 'value', key2 : 'value2'}, { key : 'value3' } } ]",
+    } catch ( JsonParseException e ) {
+      assertEquals( "JSON reader was expecting a value but found '}'.",
           e.getMessage() );
-      assertTrue( e.getCause() instanceof JSONParseException );
     }
   }
 
@@ -192,7 +192,7 @@ public class MongoPropToOptionTest {
     MongoPropToOption mongoPropToOption = new MongoPropToOption( log );
     WriteConcern writeConcern = mongoPropToOption.writeConcernValue( props );
     assertThat( (Integer) writeConcern.getWObject(), IsEqual.equalTo( 2 ) );
-    assertThat( writeConcern.getWtimeout(), IsEqual.equalTo( 1010 ) );
+    assertThat( writeConcern.getWTimeout( TimeUnit.MILLISECONDS), IsEqual.equalTo( 1010 ) );
   }
 
   @Test

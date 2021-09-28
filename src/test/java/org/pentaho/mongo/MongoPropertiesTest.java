@@ -1,5 +1,5 @@
 /*!
-* Copyright 2010 - 2017 Hitachi Vantara.  All rights reserved.
+* Copyright 2010 - 2021 Hitachi Vantara.  All rights reserved.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -22,8 +22,6 @@ import com.mongodb.ReadPreference;
 import org.junit.Test;
 import org.mockito.Mockito;
 
-import javax.net.ssl.SSLSocketFactory;
-
 import static org.junit.Assert.*;
 
 public class MongoPropertiesTest {
@@ -34,7 +32,6 @@ public class MongoPropertiesTest {
         .set( MongoProp.connectTimeout, "333" )
         .set( MongoProp.maxWaitTime, "12345" )
         .set( MongoProp.cursorFinalizerEnabled, "false" )
-        .set( MongoProp.socketKeepAlive, "true" )
         .set( MongoProp.socketTimeout, "4" )
         .set( MongoProp.useSSL, "true" )
         .set( MongoProp.readPreference, "primary" )
@@ -47,9 +44,8 @@ public class MongoPropertiesTest {
     assertEquals( 333, options.getConnectTimeout() );
     assertEquals( 12345, options.getMaxWaitTime() );
     assertFalse( options.isCursorFinalizerEnabled() );
-    assertTrue( options.isSocketKeepAlive() );
     assertEquals( 4, options.getSocketTimeout() );
-    assertTrue( options.getSocketFactory() instanceof SSLSocketFactory );
+    assertTrue( options.isSslEnabled() );
     assertEquals( options.getReadPreference(), ReadPreference.primary() );
     assertEquals( props.getReadPreference(), ReadPreference.primary() );
     assertFalse( props.useAllReplicaSetMembers() );
@@ -62,7 +58,6 @@ public class MongoPropertiesTest {
         + "maxWaitTime=12345\n"
         + "PASSWORD=\n"
         + "readPreference=primary\n"
-        + "socketKeepAlive=true\n"
         + "socketTimeout=4\n"
         + "USE_ALL_REPLICA_SET_MEMBERS=false\n"
         + "USE_KERBEROS=false\n"
@@ -78,8 +73,7 @@ public class MongoPropertiesTest {
     assertEquals( 10000, options.getConnectTimeout() );
     assertEquals( 120000, options.getMaxWaitTime() );
     assertTrue( options.isCursorFinalizerEnabled() );
-    assertFalse( options.isSocketKeepAlive() );
     assertEquals( 0, options.getSocketTimeout() );
-    assertFalse( options.getSocketFactory() instanceof SSLSocketFactory );
+    assertFalse( options.isSslEnabled() );
   }
 }

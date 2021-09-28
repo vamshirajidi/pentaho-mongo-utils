@@ -27,7 +27,7 @@ import java.util.List;
 public class DefaultMongoClientFactory implements MongoClientFactory {
 
   public MongoClient getMongoClient(
-      List<ServerAddress> serverAddressList, List<MongoCredential> credList,
+      List<ServerAddress> serverAddressList, MongoCredential credentials,
       MongoClientOptions opts, boolean useReplicaSet ) {
     // Mongo's java driver will discover all replica set or shard
     // members (Mongos) automatically when MongoClient is constructed
@@ -38,8 +38,8 @@ public class DefaultMongoClientFactory implements MongoClientFactory {
     // and a single ServerAddress instance via the useAllReplicaSetMembers
     // flag.
     return useReplicaSet || serverAddressList.size() > 1
-        ? new MongoClient( serverAddressList, credList, opts )
-        : new MongoClient( serverAddressList.get( 0 ), credList, opts );
+        ? new MongoClient( serverAddressList, credentials, opts )
+        : new MongoClient( serverAddressList.get( 0 ), credentials, opts );
   }
 
   @Override

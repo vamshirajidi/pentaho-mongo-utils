@@ -1,5 +1,5 @@
 /*!
-* Copyright 2010 - 2017 Hitachi Vantara.  All rights reserved.
+* Copyright 2010 - 2021 Hitachi Vantara.  All rights reserved.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@ package org.pentaho.mongo.wrapper;
 
 import com.mongodb.DBObject;
 import com.mongodb.MongoCredential;
-import com.mongodb.ReplicaSetStatus;
 import org.pentaho.mongo.MongoDbException;
 import org.pentaho.mongo.wrapper.collection.MongoCollectionWrapper;
 
@@ -79,9 +78,9 @@ public interface MongoClientWrapper {
   public List<String> getLastErrorModes() throws MongoDbException;
 
   /**
-   * Gets the list of credentials that this client authenticates all connections with.
+   * Gets the credentials that this client authenticates all connections with.
    */
-  public List<MongoCredential> getCredentialList();
+  public MongoCredential getCredentials();
 
   /**
    * Creates a new collection using the specified db and name
@@ -119,8 +118,11 @@ public interface MongoClientWrapper {
    */
   public <ReturnType> ReturnType perform( String db, MongoDBAction<ReturnType> action ) throws MongoDbException;
 
+
   /**
    * @return the ReplicaSetStatus for the cluster.
    */
-  ReplicaSetStatus getReplicaSetStatus();
+  // This is replaced by ClusterListener while building mongo client options.
+  // We are not using this method anywhere in our code. So, removing this method
+  //  ReplicaSetStatus getReplicaSetStatus();
 }

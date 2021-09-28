@@ -1,5 +1,5 @@
 /*!
-  * Copyright 2010 - 2017 Hitachi Vantara.  All rights reserved.
+  * Copyright 2010 - 2021 Hitachi Vantara.  All rights reserved.
   *
   * Licensed under the Apache License, Version 2.0 (the "License");
   * you may not use this file except in compliance with the License.
@@ -19,7 +19,9 @@ package org.pentaho.mongo;
 
 import com.mongodb.MongoClientOptions;
 
+import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocketFactory;
+import java.security.NoSuchAlgorithmException;
 
 /**
  * Enumeration of the available properties that can be used when configuring a MongoDB client via a
@@ -144,15 +146,19 @@ public enum MongoProp {
     }
   },
 
-  /**
-   * Boolean which controls whether connections are kept alive through firewalls.
-   */
-  socketKeepAlive {
-    @Override
-    public void setOption( MongoClientOptions.Builder builder, MongoProperties props, MongoPropToOption propToOption ) {
-      builder.socketKeepAlive( propToOption.boolValue( props.get( socketKeepAlive ), false ) );
-    }
-  },
+  // socketKeepAlive option is removed and made default to true as mentioned at following links
+  // https://mongodb.github.io/mongo-java-driver/3.5/driver/tutorials/connect-to-mongodb/
+  // https://mongodb.github.io/mongo-java-driver/3.6/javadoc/com/mongodb/MongoClientOptions.Builder.html
+
+//  /**
+//   * Boolean which controls whether connections are kept alive through firewalls.
+//   */
+//  socketKeepAlive {
+//    @Override
+//    public void setOption( MongoClientOptions.Builder builder, MongoProperties props, MongoPropToOption propToOption ) {
+//      builder.socketKeepAlive( propToOption.boolValue( props.get( socketKeepAlive ), false ) );
+//    }
+//  },
 
   /**
    * Socket timeout (miilis).  0 (default) means no timeout.
@@ -171,7 +177,14 @@ public enum MongoProp {
     @Override
     public void setOption( MongoClientOptions.Builder builder, MongoProperties props, MongoPropToOption propToOption ) {
       if ( "true".equalsIgnoreCase( props.get( useSSL ) ) ) {
-        builder.socketFactory( SSLSocketFactory.getDefault() );
+        // To enable SSL, instead of SSLSocketFactory we need to use SSLContext as mentioned at following link
+        // https://mongodb.github.io/mongo-java-driver/3.12/javadoc/com/mongodb/MongoClientOptions.Builder.html#socketFactory(javax.net.SocketFactory)
+        builder.sslEnabled( true );
+        try {
+          builder.sslContext( SSLContext.getDefault() );
+        } catch ( NoSuchAlgorithmException e ) {
+        }
+        // builder.socketFactory( SSLSocketFactory.getDefault() );
       }
     }
   },

@@ -22,7 +22,6 @@ import com.mongodb.DBObject;
 import com.mongodb.DBCollection;
 import com.mongodb.BasicDBList;
 import com.mongodb.MongoCredential;
-import com.mongodb.ReplicaSetStatus;
 import org.pentaho.mongo.BaseMessages;
 import org.pentaho.mongo.MongoDbException;
 import org.pentaho.mongo.MongoUtilLogger;
@@ -146,7 +145,11 @@ public class ConnectionStringMongoClientWrapper implements MongoClientWrapper {
    */
   public List<String> getDatabaseNames() throws MongoDbException {
     try {
-      return getMongo().getDatabaseNames();
+      List<String> dbNames = new ArrayList<>();
+      for ( String dbName : getMongo().listDatabaseNames() ) {
+        dbNames.add( dbName );
+      }
+      return dbNames;
     } catch ( Exception e ) {
       throw new MongoDbException( e );
     }
@@ -352,8 +355,8 @@ public class ConnectionStringMongoClientWrapper implements MongoClientWrapper {
   }
 
   @Override
-  public List<MongoCredential> getCredentialList() {
-    return getMongo().getCredentialsList();
+  public MongoCredential getCredentials() {
+    return getMongo().getCredential();
   }
   protected MongoCollectionWrapper wrap( DBCollection collection ) {
     return new DefaultMongoCollectionWrapper( collection );
@@ -378,8 +381,10 @@ public class ConnectionStringMongoClientWrapper implements MongoClientWrapper {
     return action.perform( getDb( db ) );
   }
 
-  @Override
-  public ReplicaSetStatus getReplicaSetStatus() {
-    return getMongo().getReplicaSetStatus();
-  }
+  // This is replaced by ClusterListener while building mongo client options.
+  // We are not using this method anywhere in our code. So, removing this method
+//  @Override
+//  public ReplicaSetStatus getReplicaSetStatus() {
+//    return getMongo().getReplicaSetStatus();
+//  }
 }

@@ -1,5 +1,5 @@
 /*!
- * Copyright 2010 - 2018 Hitachi Vantara.  All rights reserved.
+ * Copyright 2010 - 2021 Hitachi Vantara.  All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,8 +27,6 @@ import org.pentaho.mongo.MongoProp;
 import org.pentaho.mongo.MongoProperties;
 import org.pentaho.mongo.MongoUtilLogger;
 
-import java.util.List;
-
 /**
  * Test class for {@link org.pentaho.mongo.wrapper.UsernamePasswordMongoClientWrapper}.
  *
@@ -48,7 +46,7 @@ public class UsernamePasswordMongoClientWrapperTest {
   }
 
   /**
-   * Test of {@link UsernamePasswordMongoClientWrapper#getCredentialList()} method basic behavior.
+   * Test of {@link UsernamePasswordMongoClientWrapper#getCredentials()} method basic behavior.
    *
    * @throws Exception
    */
@@ -66,16 +64,16 @@ public class UsernamePasswordMongoClientWrapperTest {
       .set( MongoProp.DBNAME, dbName );
     UsernamePasswordMongoClientWrapper mongoClientWrapper =
       new UsernamePasswordMongoClientWrapper( mongoPropertiesBuilder.build(), log );
-    List<MongoCredential> credentials = mongoClientWrapper.getCredentialList();
-    Assert.assertEquals( 1, credentials.size() );
-    Assert.assertEquals( null, credentials.get( 0 ).getMechanism() );
-    Assert.assertEquals( username, credentials.get( 0 ).getUserName() );
-    Assert.assertEquals( authDb, credentials.get( 0 ).getSource() );
-    Assert.assertArrayEquals( password.toCharArray(), credentials.get( 0 ).getPassword() );
+    MongoCredential credentials = mongoClientWrapper.getCredentials();
+    Assert.assertNotNull( credentials );
+    Assert.assertNull( credentials.getMechanism() );
+    Assert.assertEquals( username, credentials.getUserName() );
+    Assert.assertEquals( authDb, credentials.getSource() );
+    Assert.assertArrayEquals( password.toCharArray(), credentials.getPassword() );
   }
 
   /**
-   * Test of {@link UsernamePasswordMongoClientWrapper#getCredentialList()} method's default behavior.
+   * Test of {@link UsernamePasswordMongoClientWrapper#getCredentials()} method's default behavior.
    *
    * @throws Exception
    */
@@ -87,16 +85,16 @@ public class UsernamePasswordMongoClientWrapperTest {
       new MongoProperties.Builder().set( MongoProp.USERNAME, username ).set( MongoProp.DBNAME, source );
     UsernamePasswordMongoClientWrapper mongoClientWrapper =
         new UsernamePasswordMongoClientWrapper( mongoPropertiesBuilder.build(), log );
-    List<MongoCredential> credentials = mongoClientWrapper.getCredentialList();
-    Assert.assertEquals( 1, credentials.size() );
-    Assert.assertEquals( null, credentials.get( 0 ).getMechanism() );
-    Assert.assertEquals( username, credentials.get( 0 ).getUserName() );
-    Assert.assertEquals( source, credentials.get( 0 ).getSource() );
-    Assert.assertArrayEquals( "".toCharArray(), credentials.get( 0 ).getPassword() );
+    MongoCredential credentials = mongoClientWrapper.getCredentials();
+    Assert.assertNotNull( credentials );
+    Assert.assertEquals( null, credentials.getMechanism() );
+    Assert.assertEquals( username, credentials.getUserName() );
+    Assert.assertEquals( source, credentials.getSource() );
+    Assert.assertArrayEquals( "".toCharArray(), credentials.getPassword() );
   }
 
   /**
-   * Test of {@link UsernamePasswordMongoClientWrapper#getCredentialList()} method's behavior
+   * Test of {@link UsernamePasswordMongoClientWrapper#getCredentials()} method's behavior
    * when MongoProp.AUTH_DATABASE is null or empty. In this case MongoProp.AUTH_DATABASE should
    * be used for the backward compatibility.
    *
@@ -116,22 +114,22 @@ public class UsernamePasswordMongoClientWrapperTest {
       .set( MongoProp.DBNAME, dbName );
     UsernamePasswordMongoClientWrapper mongoClientWrapper =
       new UsernamePasswordMongoClientWrapper( mongoPropertiesBuilder.build(), log );
-    List<MongoCredential> credentials = mongoClientWrapper.getCredentialList();
-    Assert.assertEquals( 1, credentials.size() );
-    Assert.assertEquals( null, credentials.get( 0 ).getMechanism() );
-    Assert.assertEquals( username, credentials.get( 0 ).getUserName() );
-    Assert.assertEquals( dbName, credentials.get( 0 ).getSource() );
-    Assert.assertArrayEquals( password.toCharArray(), credentials.get( 0 ).getPassword() );
+    MongoCredential credentials = mongoClientWrapper.getCredentials();
+    Assert.assertNotNull( credentials );
+    Assert.assertNull( credentials.getMechanism() );
+    Assert.assertEquals( username, credentials.getUserName() );
+    Assert.assertEquals( dbName, credentials.getSource() );
+    Assert.assertArrayEquals( password.toCharArray(), credentials.getPassword() );
 
     // MongoProp.AUTH_DATABASE is empty string
     mongoPropertiesBuilder.set( MongoProp.AUTH_DATABASE, null );
     mongoClientWrapper = new UsernamePasswordMongoClientWrapper( mongoPropertiesBuilder.build(), log );
-    credentials = mongoClientWrapper.getCredentialList();
-    Assert.assertEquals( 1, credentials.size() );
-    Assert.assertEquals( null, credentials.get( 0 ).getMechanism() );
-    Assert.assertEquals( username, credentials.get( 0 ).getUserName() );
-    Assert.assertEquals( dbName, credentials.get( 0 ).getSource() );
-    Assert.assertArrayEquals( password.toCharArray(), credentials.get( 0 ).getPassword() );
+    credentials = mongoClientWrapper.getCredentials();
+    Assert.assertNotNull( credentials);
+    Assert.assertNull( credentials.getMechanism() );
+    Assert.assertEquals( username, credentials.getUserName() );
+    Assert.assertEquals( dbName, credentials.getSource() );
+    Assert.assertArrayEquals( password.toCharArray(), credentials.getPassword() );
   }
 
   @Test
@@ -155,12 +153,12 @@ public class UsernamePasswordMongoClientWrapperTest {
 
       UsernamePasswordMongoClientWrapper mongoClientWrapper =
           new UsernamePasswordMongoClientWrapper( mongoPropertiesBuilder.build(), log );
-      List<MongoCredential> credentials = mongoClientWrapper.getCredentialList();
-      Assert.assertEquals( 1, credentials.size() );
-      Assert.assertEquals( authMecha, credentials.get( 0 ).getMechanism() );
-      Assert.assertEquals( username, credentials.get( 0 ).getUserName() );
-      Assert.assertEquals( dbName, credentials.get( 0 ).getSource() );
-      Assert.assertArrayEquals( password.toCharArray(), credentials.get( 0 ).getPassword() );
+      MongoCredential credentials = mongoClientWrapper.getCredentials();
+      Assert.assertNotNull( credentials );
+      Assert.assertEquals( authMecha, credentials.getMechanism() );
+      Assert.assertEquals( username, credentials.getUserName() );
+      Assert.assertEquals( dbName, credentials.getSource() );
+      Assert.assertArrayEquals( password.toCharArray(), credentials.getPassword() );
 
     }
   }

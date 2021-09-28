@@ -1,5 +1,5 @@
 /*!
-  * Copyright 2010 - 2018 Hitachi Vantara.  All rights reserved.
+  * Copyright 2010 - 2021 Hitachi Vantara.  All rights reserved.
   *
   * Licensed under the Apache License, Version 2.0 (the "License");
   * you may not use this file except in compliance with the License.
@@ -62,8 +62,7 @@ class UsernamePasswordMongoClientWrapper extends NoAuthMongoClientWrapper {
    * @return a configured MongoCredential object
    */
   @Override
-  public List<MongoCredential> getCredentialList() {
-    List<MongoCredential> credList = new ArrayList<MongoCredential>();
+  public MongoCredential getCredentials() {
     String authDatabase = props.get( MongoProp.AUTH_DATABASE );
     String authMecha = props.get( MongoProp.AUTH_MECHA );
     //if not value on AUTH_MECHA set "MONGODB-CR" default authentication mechanism
@@ -76,21 +75,20 @@ class UsernamePasswordMongoClientWrapper extends NoAuthMongoClientWrapper {
                       ? props.get( MongoProp.DBNAME ) : authDatabase;
 
     if ( authMecha.equalsIgnoreCase( "SCRAM-SHA-1" ) ) {
-      credList.add( MongoCredential.createScramSha1Credential(
+      return MongoCredential.createScramSha1Credential(
         props.get( MongoProp.USERNAME ),
         authDatabase,
-        props.get( MongoProp.PASSWORD ).toCharArray() ) );
+        props.get( MongoProp.PASSWORD ).toCharArray() );
     } else if ( authMecha.equalsIgnoreCase( "PLAIN" ) ) {
-      credList.add( MongoCredential.createPlainCredential(
+      return MongoCredential.createPlainCredential(
           props.get( MongoProp.USERNAME ),
           authDatabase,
-          props.get( MongoProp.PASSWORD ).toCharArray() ) );
+          props.get( MongoProp.PASSWORD ).toCharArray() );
     } else {
-      credList.add( MongoCredential.createCredential(
+      return MongoCredential.createCredential(
         props.get( MongoProp.USERNAME ),
         authDatabase,
-        props.get( MongoProp.PASSWORD ).toCharArray() ) );
+        props.get( MongoProp.PASSWORD ).toCharArray() );
     }
-    return credList;
   }
 }
